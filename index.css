@@ -45,8 +45,8 @@ body {
 
 .app-container {
     width: 100%;
-    max-width: 1200px;
-    padding: 0.5rem 1rem;
+    max-width: 100%;
+    padding: 1rem 2rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
