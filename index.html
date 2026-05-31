@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scale Finder - Interactive Fretboard</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Scale Finder</h1>
+            <button class="theme-toggle" id="theme-btn" title="Toggle Dark/Light Mode">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+        </header>
+        
+        <main>
+            <div class="controls-wrapper" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem;">
+                <!-- Panel 1: Music Context -->
+                <section class="controls panel glass" style="flex: 2; min-width: 300px; justify-content: flex-start;">
+                    <div class="control-group">
+                        <div style="display: flex; gap: 0.5rem; align-items: stretch; height: 100%;">
+                            <select id="root-note">
+                                <option value="C">C</option>
+                                <option value="Db">Db / C#</option>
+                                <option value="D">D</option>
+                                <option value="Eb">Eb / D#</option>
+                                <option value="E">E</option>
+                                <option value="F">F</option>
+                                <option value="Gb">Gb / F#</option>
+                                <option value="G">G</option>
+                                <option value="Ab">Ab / G#</option>
+                                <option value="A" selected>A</option>
+                                <option value="Bb">Bb / A#</option>
+                                <option value="B">B</option>
+                            </select>
+                            <button id="drone-btn" class="drone-btn" title="Toggle Drone">▶️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group" style="justify-content: flex-end;">
+                        <button id="random-btn" class="drone-btn" title="Randomize Scale" style="height: 42.4px;">🎲</button>
+                    </div>
+
+                    <div class="control-group">
+                        <select id="type-select">
+                            <optgroup label="Scales">
+                                <option value="Major (Ionian)">Major (Ionian)</option>
+                                <option value="Dorian">Dorian</option>
+                                <option value="Phrygian">Phrygian</option>
+                                <option value="Lydian">Lydian</option>
+                                <option value="Mixolydian">Mixolydian</option>
+                                <option value="Minor (Aeolian)">Minor (Aeolian)</option>
+                                <option value="Locrian">Locrian</option>
+                                <option value="Minor Pentatonic">Minor Pentatonic</option>
+                                <option value="Major Pentatonic">Major Pentatonic</option>
+                                <option value="Blues">Blues</option>
+                                <option value="Melodic Minor">Melodic Minor</option>
+                                <option value="Harmonic Minor">Harmonic Minor</option>
+                                <option value="Whole Tone">Whole Tone</option>
+                            </optgroup>
+                            <optgroup label="Chords">
+                                <option value="Major Chord">Major</option>
+                                <option value="Minor Chord">Minor</option>
+                                <option value="Maj7">Major 7</option>
+                                <option value="Min7">Minor 7</option>
+                                <option value="Dom7">Dominant 7</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- Panel 2: View Context -->
+                <section class="controls panel glass" style="flex: 1; min-width: 300px; justify-content: flex-start;">
+                    <div class="control-group">
+                        <div class="segmented-control" id="display-mode-control">
+                            <input type="radio" id="view-guitar" name="view-mode" value="guitar">
+                            <label for="view-guitar" title="Show Fretboard Only">🎸</label>
+                            
+                            <input type="radio" id="view-both" name="view-mode" value="both" checked>
+                            <label for="view-both" title="Show Both">🎸🎹</label>
+
+                            <input type="radio" id="view-piano" name="view-mode" value="piano">
+                            <label for="view-piano" title="Show Piano Only">🎹</label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Highlight Root</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="show-root" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </section>
+            <div id="fret-context-wrapper" style="margin-bottom: 3rem;">
+                <section class="advanced-settings panel glass" style="margin-bottom: 0.5rem;">
+                <div class="control-group">
+                    <label>Orientation Left</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="left-handed">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <select id="wood-type">
+                        <option value="rosewood">Rosewood</option>
+                        <option value="maple">Maple</option>
+                        <option value="ebony" selected>Ebony</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <select id="string-count">
+                        <option value="ukulele">Ukulele</option>
+                        <option value="4">Bass (4 Strings)</option>
+                        <option value="5">Bass (5 Strings)</option>
+                        <option value="6" selected>Guitar (6 Strings)</option>
+                        <option value="7">Guitar (7 Strings)</option>
+                        <option value="8">Guitar (8 Strings)</option>
+                    </select>
+                </div>
+                
+            </section>
+            
+            <section class="fretboard-container glass" id="fretboard-wrapper">
+                <div class="fretboard" id="fretboard">
+                    <!-- Fretboard will be injected here via JS -->
+                </div>
+            </section>
+            </div>
+
+            <div id="piano-context-wrapper" style="display: block;">
+                <section class="advanced-settings panel glass" id="piano-settings" style="margin-bottom: 0.5rem;">
+                <div class="control-group">
+                    <label for="piano-labels">Key Labels</label>
+                    <select id="piano-labels">
+                        <option value="notes" selected>Notes</option>
+                        <option value="intervals">Intervals</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <select id="piano-theme">
+                        <option value="classic" selected>Classic</option>
+                        <option value="synth">Synth (Neon)</option>
+                        <option value="rhodes">Vintage Rhodes</option>
+                        <option value="matrix">Matrix Hacker</option>
+                    </select>
+                </div>
+                </section>
+    
+                <section class="piano-wrapper glass" id="piano-wrapper" style="padding: 1.5rem; overflow-x: auto;">
+                <div class="piano" id="piano-container">
+                    <!-- Piano will be injected here via JS -->
+                </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="models/MusicTheory.js"></script>
+    <script src="models/Fretboard.js"></script>
+    <script src="views/FretboardView.js"></script>
+    <script src="views/PianoView.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
