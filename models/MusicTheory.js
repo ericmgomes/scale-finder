@@ -21,6 +21,38 @@ class MusicTheory {
         };
     }
 
+    static get parentMajorOffsets() {
+        return {
+            'Major (Ionian)': 0,
+            'Dorian': -2,
+            'Phrygian': -4,
+            'Lydian': -5,
+            'Mixolydian': -7,
+            'Minor (Aeolian)': -9,
+            'Locrian': -11,
+            'Minor Pentatonic': -9,  // Use Aeolian parent
+            'Major Pentatonic': 0,   // Use Ionian parent
+            'Blues': -9,             // Use Aeolian parent
+            'Melodic Minor': 0,      // Fallback
+            'Harmonic Minor': -9,    // Use Aeolian parent
+            'Whole Tone': 0          // Fallback
+        };
+    }
+
+    static getParentMajorRoot(rootNote, type) {
+        if (!rootNote || !type) return rootNote;
+        const offset = this.parentMajorOffsets[type];
+        if (offset === undefined) return rootNote; // If chord or unsupported
+        
+        const rootIndex = this.notes.indexOf(rootNote);
+        if (rootIndex === -1) return rootNote;
+        
+        let parentIndex = (rootIndex + offset) % 12;
+        if (parentIndex < 0) parentIndex += 12;
+        
+        return this.notes[parentIndex];
+    }
+
     static get chords() {
         return {
             'Major Chord': [0, 4, 7],

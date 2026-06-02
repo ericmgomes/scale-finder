@@ -61,6 +61,8 @@ class FretboardView {
                 const dot = document.createElement('div');
                 dot.className = 'note-dot';
                 dot.dataset.note = noteData.note;
+                dot.dataset.fret = fretIndex;
+                dot.dataset.string = stringIndex;
                 
                 // Left-handed css flip fix on texts
                 const dotSpan = document.createElement('span');
@@ -103,13 +105,15 @@ class FretboardView {
         this.container.appendChild(numbersDiv);
     }
 
-    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes') {
+    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes', fretWindows = null) {
         if (!this.container || !activeNotes || activeNotes.length === 0) return; // Early return
 
         const dots = this.container.querySelectorAll('.note-dot');
         
         dots.forEach(dot => {
             const note = dot.dataset.note;
+            const fret = parseInt(dot.dataset.fret, 10);
+            const stringIdx = parseInt(dot.dataset.string, 10);
             const span = dot.querySelector('span');
             
             // Labels Logic
@@ -121,12 +125,45 @@ class FretboardView {
                 span.innerText = note;
             }
 
-            dot.classList.remove('visible', 'root');
+            dot.classList.remove('visible', 'root', 'faded');
             
             if (activeNotes.includes(note)) {
                 dot.classList.add('visible');
                 if (showRootHighlight && note === rootNote) {
                     dot.classList.add('root');
+                }
+                
+                // Position filtering logic
+                if (fretWindows !== null) {
+                    if (Array.isArray(fretWindows)) {
+                        // Generic Windows logic
+                        const inWindow = fretWindows.some(w => fret >= w.min && fret <= w.max);
+                        if (!inWindow) {
+                            dot.classList.add('faded');
+                        }
+                    } else if (fretWindows.type === 'per_string') {
+                        // Strict CAGED per-string logic
+                        // Find the corresponding octave window
+                        const baseBounds = fretWindows.strings[stringIdx];
+                        if (baseBounds) {
+                            // baseBounds is [min, max]
+                            // The shape repeats every 12 frets
+                            let inWindow = false;
+                            for (let octave = -1; octave <= 3; octave++) {
+                                const minFret = baseBounds[0] + (octave * 12);
+                                const maxFret = baseBounds[1] + (octave * 12);
+                                if (fret >= minFret && fret <= maxFret) {
+                                    inWindow = true;
+                                    break;
+                                }
+                            }
+                            if (!inWindow) {
+                                dot.classList.add('faded');
+                            }
+                        } else {
+                            dot.classList.add('faded'); // String not covered
+                        }
+                    }
                 }
             }
         });

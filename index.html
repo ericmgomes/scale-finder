@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scale Wizard - Interactive Fretboard</title>
+    <title>Scale Wizard</title>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -16,9 +16,9 @@
         </header>
         
         <main>
-            <div class="controls-wrapper" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem;">
+            <div class="controls-wrapper" style="display: flex; gap: 1rem; flex-wrap: nowrap; margin-bottom: 3rem;">
                 <!-- Panel 1: Music Context -->
-                <section class="controls panel glass" style="flex: 1; min-width: 350px; justify-content: flex-start;">
+                <section class="controls panel glass" style="flex: 0 1 auto; min-width: 0; justify-content: flex-start;">
                     <div class="control-group">
                         <div style="display: flex; gap: 0.5rem; align-items: stretch; height: 100%;">
                             <select id="root-note">
@@ -72,7 +72,7 @@
                 </section>
 
                 <!-- Panel 2: View Context -->
-                <section class="controls panel glass" style="flex: 1; min-width: 300px; justify-content: flex-start;">
+                <section class="controls panel glass" style="flex: 1 1 auto; min-width: 0; justify-content: flex-start;">
                     <!-- Instrument view selector removed -->
 
                     <div class="control-group">
@@ -81,6 +81,27 @@
                             <input type="checkbox" id="show-root" checked>
                             <span class="slider"></span>
                         </label>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="shape-select">Position/Shape</label>
+                        <select id="shape-select">
+                            <option value="all" selected>All</option>
+                            <optgroup label="Generic Windows">
+                                <option value="1">Position 1</option>
+                                <option value="2">Position 2</option>
+                                <option value="3">Position 3</option>
+                                <option value="4">Position 4</option>
+                                <option value="5">Position 5</option>
+                            </optgroup>
+                            <optgroup label="CAGED Shapes (Standard)" id="caged-optgroup">
+                                <option value="caged_c">C Shape (Pos 1)</option>
+                                <option value="caged_a">A Shape (Pos 2)</option>
+                                <option value="caged_g">G Shape (Pos 3)</option>
+                                <option value="caged_e">E Shape (Pos 4)</option>
+                                <option value="caged_d">D Shape (Pos 5)</option>
+                            </optgroup>
+                        </select>
                     </div>
 
                     <div class="control-group">

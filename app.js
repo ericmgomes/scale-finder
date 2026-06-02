@@ -109,6 +109,7 @@ class App {
             woodTypeSync: document.getElementById('wood-type'),
             stringCountSync: document.getElementById('string-count'),
             tuningPresetSync: document.getElementById('tuning-preset'),
+            shapeSelectSync: document.getElementById('shape-select'),
             keyLabelsSync: document.getElementById('key-labels'),
             pianoThemeSync: document.getElementById('piano-theme')
         };
@@ -254,6 +255,10 @@ class App {
             this.saveState();
         });
 
+        this.elements.shapeSelectSync.addEventListener('change', () => {
+            this.updateHighlights();
+        });
+
         this.elements.keyLabelsSync.addEventListener('change', () => {
             this.updateHighlights();
         });
@@ -340,7 +345,118 @@ class App {
         this.updateHighlights();
     }
 
+    calculateCAGEDWindows(rootNote, shape) {
+        // CAGED relies on standard 6 string tuning
+        if (this.elements.stringCountSync.value !== '6' || this.elements.tuningPresetSync.value !== 'standard') {
+            return null; 
+        }
+
+        const state = this.fretboard.getFretboardState();
+        const lowENotes = state[5].notes;
+        const aNotes = state[4].notes;
+        const dNotes = state[3].notes;
+        
+        let r_E = -1, r_A = -1, r_D = -1;
+        for (let i = 0; i < 12; i++) {
+            if (lowENotes[i] && lowENotes[i].note === rootNote) r_E = i;
+            if (aNotes[i] && aNotes[i].note === rootNote) r_A = i;
+            if (dNotes[i] && dNotes[i].note === rootNote) r_D = i;
+        }
+
+        let bounds = [];
+        let R = 0;
+        
+        switch (shape) {
+            case 'e':
+                R = r_E;
+                bounds = [[R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3]];
+                break;
+            case 'd':
+                R = r_D;
+                bounds = [[R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3]];
+                break;
+            case 'c':
+                R = r_A;
+                // String indices: 0(e), 1(B), 2(G), 3(D), 4(A), 5(E)
+                // The B string needs R+1 for minor pentatonic, but G string should stop at R to avoid stretch.
+                bounds = [[R-3, R], [R-3, R+1], [R-3, R], [R-3, R], [R-3, R], [R-3, R]];
+                break;
+            case 'a':
+                R = r_A;
+                bounds = [[R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3], [R-1, R+3]];
+                break;
+            case 'g':
+                R = r_E;
+                bounds = [[R-4, R], [R-4, R], [R-4, R], [R-4, R], [R-4, R], [R-4, R]];
+                break;
+        }
+
+        return { type: 'per_string', strings: bounds };
+    }
+
+    calculateFretWindows(rootNote, position, typeSelection) {
+        if (position === 'all') return null;
+        
+        const referenceRoot = MusicTheory.getParentMajorRoot(rootNote, typeSelection);
+        
+        if (position.startsWith('caged_')) {
+            return this.calculateCAGEDWindows(referenceRoot, position.split('_')[1]);
+        }
+        
+        // Find r1: first fret (0-11) of referenceRoot on the lowest string
+        const lowestStringNotes = this.fretboard.getFretboardState()[this.fretboard.tuning.length - 1].notes;
+        let r1 = -1;
+        for (let i = 0; i < 12; i++) {
+            if (lowestStringNotes[i] && lowestStringNotes[i].note === referenceRoot) {
+                r1 = i;
+                break;
+            }
+        }
+        
+        if (r1 === -1) return null;
+        
+        const posIndex = parseInt(position, 10);
+        let startOffset = 0;
+        let endOffset = 4; // width of 4 frets (span 5 frets)
+        
+        switch (posIndex) {
+            case 1: startOffset = 5; endOffset = 9; break;   // C Shape equivalent
+            case 2: startOffset = 7; endOffset = 11; break;  // A Shape equivalent
+            case 3: startOffset = 9; endOffset = 13; break;  // G Shape equivalent
+            case 4: startOffset = 0; endOffset = 4; break;   // E Shape equivalent
+            case 5: startOffset = 2; endOffset = 6; break;   // D Shape equivalent
+        }
+        
+        const baseMin = r1 + startOffset;
+        const baseMax = r1 + endOffset;
+        
+        const windows = [];
+        for (let octave = -1; octave <= 3; octave++) {
+            windows.push({
+                min: baseMin + (octave * 12),
+                max: baseMax + (octave * 12)
+            });
+        }
+        
+        return windows;
+    }
+
     updateHighlights() {
+        const cagedGroup = document.getElementById('caged-optgroup');
+        if (cagedGroup) {
+            const isStandard6 = this.elements.stringCountSync.value === '6' && this.elements.tuningPresetSync.value === 'standard';
+            if (!isStandard6) {
+                cagedGroup.disabled = true;
+                cagedGroup.style.display = 'none';
+                if (this.elements.shapeSelectSync.value.startsWith('caged_')) {
+                    this.elements.shapeSelectSync.value = 'all'; // Reset if invalid
+                }
+            } else {
+                cagedGroup.disabled = false;
+                cagedGroup.style.display = 'block';
+            }
+        }
+
         const rootNote = this.elements.rootNoteSync.value;
         const typeSelection = this.elements.typeSync.value;
         const showRoot = this.elements.showRootSync.checked;
@@ -355,7 +471,9 @@ class App {
             this.synth.setDroneFrequency(freq);
         }
 
-        this.view.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value);
+        const fretWindows = this.calculateFretWindows(rootNote, this.elements.shapeSelectSync.value, typeSelection);
+
+        this.view.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value, fretWindows);
         this.pianoView.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value);
         this.saveState();
     }
@@ -364,6 +482,7 @@ class App {
         const state = {
             rootNote: this.elements.rootNoteSync.value,
             type: this.elements.typeSync.value,
+            shape: this.elements.shapeSelectSync.value,
             showGuitar: this.elements.toggleGuitarSync.checked,
             showPiano: this.elements.togglePianoSync.checked,
             showRoot: this.elements.showRootSync.checked,
@@ -387,6 +506,7 @@ class App {
             const state = JSON.parse(saved);
             if (state.rootNote) this.elements.rootNoteSync.value = state.rootNote;
             if (state.type) this.elements.typeSync.value = state.type;
+            if (state.shape) this.elements.shapeSelectSync.value = state.shape;
             if (state.showGuitar !== undefined) {
                 this.elements.toggleGuitarSync.checked = state.showGuitar;
             } else if (state.instrument) {

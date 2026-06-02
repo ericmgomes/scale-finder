@@ -394,6 +394,20 @@ input:checked + .slider:before {
     opacity: 1;
 }
 
+.note-dot.visible.faded {
+    opacity: 0.15;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    box-shadow: none;
+}
+
+.note-dot.visible.faded.root {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: transparent;
+    box-shadow: none;
+}
+
 .note-dot.root {
     background: var(--primary);
     box-shadow: 0 0 12px var(--primary);
