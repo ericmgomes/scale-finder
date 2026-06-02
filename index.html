@@ -18,7 +18,7 @@
         <main>
             <div class="controls-wrapper" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem;">
                 <!-- Panel 1: Music Context -->
-                <section class="controls panel glass" style="flex: 2; min-width: 300px; justify-content: flex-start;">
+                <section class="controls panel glass" style="flex: 1; min-width: 350px; justify-content: flex-start;">
                     <div class="control-group">
                         <div style="display: flex; gap: 0.5rem; align-items: stretch; height: 100%;">
                             <select id="root-note">
@@ -73,18 +73,7 @@
 
                 <!-- Panel 2: View Context -->
                 <section class="controls panel glass" style="flex: 1; min-width: 300px; justify-content: flex-start;">
-                    <div class="control-group">
-                        <div class="segmented-control" id="display-mode-control">
-                            <input type="radio" id="view-guitar" name="view-mode" value="guitar">
-                            <label for="view-guitar" title="Show Fretboard Only">🎸</label>
-                            
-                            <input type="radio" id="view-both" name="view-mode" value="both" checked>
-                            <label for="view-both" title="Show Both">🎸🎹</label>
-
-                            <input type="radio" id="view-piano" name="view-mode" value="piano">
-                            <label for="view-piano" title="Show Piano Only">🎹</label>
-                        </div>
-                    </div>
+                    <!-- Instrument view selector removed -->
 
                     <div class="control-group">
                         <label>Highlight Root</label>
@@ -106,7 +95,7 @@
             </div>
             
             <div id="fret-context-wrapper" style="margin-bottom: 3rem;">
-                <section class="advanced-settings panel glass" style="margin-bottom: 0.5rem;">
+                <section class="advanced-settings panel glass" style="margin-bottom: 0.5rem; justify-content: flex-start;">
                 <div class="control-group">
                     <label>Orientation Left</label>
                     <label class="toggle-switch">
@@ -133,7 +122,35 @@
                         <option value="8">Guitar (8 Strings)</option>
                     </select>
                 </div>
+
+                <div class="control-group">
+                    <select id="tuning-preset">
+                        <option value="custom" hidden>Custom</option>
+                        <optgroup label="6-String">
+                            <option value="standard" selected>Standard E</option>
+                            <option value="drop_d">Drop D</option>
+                            <option value="drop_c">Drop C</option>
+                            <option value="dadgad">DADGAD</option>
+                            <option value="open_d">Open D</option>
+                            <option value="open_g">Open G</option>
+                        </optgroup>
+                        <optgroup label="7-String">
+                            <option value="standard_7">Standard B (7)</option>
+                            <option value="drop_a_7">Drop A (7)</option>
+                        </optgroup>
+                        <optgroup label="8-String">
+                            <option value="standard_8">Standard F# (8)</option>
+                            <option value="drop_e_8">Drop E (8)</option>
+                        </optgroup>
+                    </select>
+                </div>
                 
+                <div class="control-group" style="margin-left: auto;">
+                    <label class="toggle-switch" title="Toggle Guitar Visibility">
+                        <input type="checkbox" id="toggle-guitar" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </section>
             
             <section class="fretboard-container glass" id="fretboard-wrapper">
@@ -144,7 +161,7 @@
             </div>
 
             <div id="piano-context-wrapper" style="display: block;">
-                <section class="advanced-settings panel glass" id="piano-settings" style="margin-bottom: 0.5rem;">
+                <section class="advanced-settings panel glass" id="piano-settings" style="margin-bottom: 0.5rem; justify-content: flex-start;">
                 <div class="control-group">
                     <select id="piano-theme">
                         <option value="classic" selected>Classic</option>
@@ -152,6 +169,13 @@
                         <option value="rhodes">Vintage Rhodes</option>
                         <option value="matrix">Matrix Hacker</option>
                     </select>
+                </div>
+
+                <div class="control-group" style="margin-left: auto;">
+                    <label class="toggle-switch" title="Toggle Piano Visibility">
+                        <input type="checkbox" id="toggle-piano" checked>
+                        <span class="slider"></span>
+                    </label>
                 </div>
                 </section>
     

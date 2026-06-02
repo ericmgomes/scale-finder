@@ -92,7 +92,8 @@ class App {
         this.synth = new Synth();
         
         this.elements = {
-            viewModeRadios: document.querySelectorAll('input[name="view-mode"]'),
+            toggleGuitarSync: document.getElementById('toggle-guitar'),
+            togglePianoSync: document.getElementById('toggle-piano'),
             fretContext: document.getElementById('fret-context-wrapper'),
             pianoContext: document.getElementById('piano-context-wrapper'),
             fretboardWrapper: document.getElementById('fretboard-wrapper'),
@@ -107,6 +108,7 @@ class App {
             leftHandedSync: document.getElementById('left-handed'),
             woodTypeSync: document.getElementById('wood-type'),
             stringCountSync: document.getElementById('string-count'),
+            tuningPresetSync: document.getElementById('tuning-preset'),
             keyLabelsSync: document.getElementById('key-labels'),
             pianoThemeSync: document.getElementById('piano-theme')
         };
@@ -118,6 +120,19 @@ class App {
             6: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}],
             7: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}, {note:'B', octave:1}],
             8: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}, {note:'B', octave:1}, {note:'Gb', octave:1}]
+        };
+
+        this.tuningsPresets = {
+            'standard': { strings: '6', tuning: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}] },
+            'drop_d': { strings: '6', tuning: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'D', octave:2}] },
+            'drop_c': { strings: '6', tuning: [{note:'D', octave:4}, {note:'A', octave:3}, {note:'F', octave:3}, {note:'C', octave:3}, {note:'G', octave:2}, {note:'C', octave:2}] },
+            'dadgad': { strings: '6', tuning: [{note:'D', octave:4}, {note:'A', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'D', octave:2}] },
+            'open_d': { strings: '6', tuning: [{note:'D', octave:4}, {note:'A', octave:3}, {note:'Gb', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'D', octave:2}] },
+            'open_g': { strings: '6', tuning: [{note:'D', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'G', octave:2}, {note:'D', octave:2}] },
+            'standard_7': { strings: '7', tuning: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}, {note:'B', octave:1}] },
+            'drop_a_7': { strings: '7', tuning: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}, {note:'A', octave:1}] },
+            'standard_8': { strings: '8', tuning: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}, {note:'B', octave:1}, {note:'Gb', octave:1}] },
+            'drop_e_8': { strings: '8', tuning: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}, {note:'B', octave:1}, {note:'E', octave:1}] }
         };
         
         this.init();
@@ -207,14 +222,36 @@ class App {
         this.elements.stringCountSync.addEventListener('change', (e) => {
             const val = e.target.value === 'ukulele' ? 'ukulele' : parseInt(e.target.value);
             this.handleStringCountChange(val);
+            // Default preset mapped based on string count
+            if (val === 6) this.elements.tuningPresetSync.value = 'standard';
+            else if (val === 7) this.elements.tuningPresetSync.value = 'standard_7';
+            else if (val === 8) this.elements.tuningPresetSync.value = 'standard_8';
+            else this.elements.tuningPresetSync.value = 'custom';
             this.saveState();
         });
 
-        this.elements.viewModeRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                this.updateInstrumentView(e.target.value);
+        this.elements.tuningPresetSync.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val !== 'custom' && this.tuningsPresets[val]) {
+                const preset = this.tuningsPresets[val];
+                this.elements.stringCountSync.value = preset.strings;
+                
+                // Copy the default to prevent mutating the original reference
+                const newTuning = JSON.parse(JSON.stringify(preset.tuning));
+                this.fretboard.setTuning(newTuning);
+                this.renderFretboard();
                 this.saveState();
-            });
+            }
+        });
+
+        this.elements.toggleGuitarSync.addEventListener('change', (e) => {
+            this.elements.fretboardWrapper.style.display = e.target.checked ? 'flex' : 'none';
+            this.saveState();
+        });
+
+        this.elements.togglePianoSync.addEventListener('change', (e) => {
+            this.elements.pianoWrapper.style.display = e.target.checked ? 'block' : 'none';
+            this.saveState();
         });
 
         this.elements.keyLabelsSync.addEventListener('change', () => {
@@ -248,13 +285,9 @@ class App {
             this.handleStringCountChange(defaultInst === 'ukulele' ? 'ukulele' : (parseInt(defaultInst) || 6)); 
         }
 
-        this.updateInstrumentView(document.querySelector('input[name="view-mode"]:checked').value);
-    }
-
-    updateInstrumentView(val) {
-        if (!this.elements.fretContext || !this.elements.pianoContext) return;
-        this.elements.fretContext.style.display = (val === 'both' || val === 'guitar') ? 'block' : 'none';
-        this.elements.pianoContext.style.display = (val === 'both' || val === 'piano') ? 'block' : 'none';
+        // Instrument toggles init
+        this.elements.fretboardWrapper.style.display = this.elements.toggleGuitarSync.checked ? 'flex' : 'none';
+        this.elements.pianoWrapper.style.display = this.elements.togglePianoSync.checked ? 'block' : 'none';
     }
 
     handleStringCountChange(count) {
@@ -289,6 +322,7 @@ class App {
             // On change, update the Fretboard state and redraw
             const onTuningChange = () => {
                 this.fretboard.tuning[index].note = noteSelect.value;
+                this.elements.tuningPresetSync.value = 'custom';
                 this.renderFretboard();
                 this.saveState();
             };
@@ -330,11 +364,13 @@ class App {
         const state = {
             rootNote: this.elements.rootNoteSync.value,
             type: this.elements.typeSync.value,
-            instrument: document.querySelector('input[name="view-mode"]:checked').value,
+            showGuitar: this.elements.toggleGuitarSync.checked,
+            showPiano: this.elements.togglePianoSync.checked,
             showRoot: this.elements.showRootSync.checked,
             leftHanded: this.elements.leftHandedSync.checked,
             woodType: this.elements.woodTypeSync.value,
             stringCount: this.elements.stringCountSync.value,
+            tuningPreset: this.elements.tuningPresetSync.value,
             tuning: this.fretboard.tuning,
             lightMode: document.documentElement.getAttribute('data-theme') === 'light',
             keyLabels: this.elements.keyLabelsSync.value,
@@ -351,14 +387,20 @@ class App {
             const state = JSON.parse(saved);
             if (state.rootNote) this.elements.rootNoteSync.value = state.rootNote;
             if (state.type) this.elements.typeSync.value = state.type;
-            if (state.instrument) {
-                const radio = document.querySelector(`input[name="view-mode"][value="${state.instrument}"]`);
-                if (radio) radio.checked = true;
+            if (state.showGuitar !== undefined) {
+                this.elements.toggleGuitarSync.checked = state.showGuitar;
+            } else if (state.instrument) {
+                this.elements.toggleGuitarSync.checked = (state.instrument === 'both' || state.instrument === 'guitar');
+                this.elements.togglePianoSync.checked = (state.instrument === 'both' || state.instrument === 'piano');
             }
+            if (state.showPiano !== undefined) this.elements.togglePianoSync.checked = state.showPiano;
+            
             if (state.showRoot !== undefined) this.elements.showRootSync.checked = state.showRoot;
             if (state.leftHanded !== undefined) this.elements.leftHandedSync.checked = state.leftHanded;
             if (state.woodType) this.elements.woodTypeSync.value = state.woodType;
             if (state.stringCount) this.elements.stringCountSync.value = state.stringCount;
+            if (state.tuningPreset) this.elements.tuningPresetSync.value = state.tuningPreset;
+            
             if (state.keyLabels) this.elements.keyLabelsSync.value = state.keyLabels;
             else if (state.pianoLabels) this.elements.keyLabelsSync.value = state.pianoLabels;
             if (state.pianoTheme) this.elements.pianoThemeSync.value = state.pianoTheme;

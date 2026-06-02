@@ -269,6 +269,7 @@ input:checked + .slider:before {
     content: '';
     position: absolute;
     width: 100%;
+    height: 3px; /* Default height */
     background: var(--string-color);
     left: 0;
     top: 50%;
@@ -285,6 +286,8 @@ input:checked + .slider:before {
 .string:nth-child(4)::after { height: 2.8px; background: #a19a86; box-shadow: inset 0 0.5px 1px rgba(255,255,255,0.3), 0 2px 3px rgba(0,0,0,0.6); opacity: 0.9;}
 .string:nth-child(5)::after { height: 3.5px; background: #a19a86; box-shadow: inset 0 1px 1.5px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.6); opacity: 0.95;}
 .string:nth-child(6)::after { height: 4.5px; background: #a19a86; box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.6); opacity: 1;}
+.string:nth-child(7)::after { height: 5.5px; background: #a19a86; box-shadow: inset 0 1px 2.5px rgba(255,255,255,0.3), 0 2px 5px rgba(0,0,0,0.6); opacity: 1;}
+.string:nth-child(8)::after { height: 6.5px; background: #a19a86; box-shadow: inset 0 1px 3px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.6); opacity: 1;}
 
 .fret {
     flex: 1;
