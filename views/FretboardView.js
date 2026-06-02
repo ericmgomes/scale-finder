@@ -103,14 +103,24 @@ class FretboardView {
         this.container.appendChild(numbersDiv);
     }
 
-    highlightNotes(activeNotes, rootNote, showRootHighlight) {
+    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes') {
         if (!this.container || !activeNotes || activeNotes.length === 0) return; // Early return
 
         const dots = this.container.querySelectorAll('.note-dot');
         
         dots.forEach(dot => {
             const note = dot.dataset.note;
+            const span = dot.querySelector('span');
             
+            // Labels Logic
+            if (labelMode === 'none') {
+                span.innerText = '';
+            } else if (labelMode === 'intervals') {
+                span.innerText = MusicTheory.getIntervalName(rootNote, note);
+            } else {
+                span.innerText = note;
+            }
+
             dot.classList.remove('visible', 'root');
             
             if (activeNotes.includes(note)) {

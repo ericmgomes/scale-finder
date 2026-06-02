@@ -107,7 +107,7 @@ class App {
             leftHandedSync: document.getElementById('left-handed'),
             woodTypeSync: document.getElementById('wood-type'),
             stringCountSync: document.getElementById('string-count'),
-            pianoLabelsSync: document.getElementById('piano-labels'),
+            keyLabelsSync: document.getElementById('key-labels'),
             pianoThemeSync: document.getElementById('piano-theme')
         };
         
@@ -217,7 +217,7 @@ class App {
             });
         });
 
-        this.elements.pianoLabelsSync.addEventListener('change', () => {
+        this.elements.keyLabelsSync.addEventListener('change', () => {
             this.updateHighlights();
         });
 
@@ -321,8 +321,8 @@ class App {
             this.synth.setDroneFrequency(freq);
         }
 
-        this.view.highlightNotes(activeNotes, rootNote, showRoot);
-        this.pianoView.highlightNotes(activeNotes, rootNote, showRoot, this.elements.pianoLabelsSync.value);
+        this.view.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value);
+        this.pianoView.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value);
         this.saveState();
     }
 
@@ -337,7 +337,7 @@ class App {
             stringCount: this.elements.stringCountSync.value,
             tuning: this.fretboard.tuning,
             lightMode: document.documentElement.getAttribute('data-theme') === 'light',
-            pianoLabels: this.elements.pianoLabelsSync.value,
+            keyLabels: this.elements.keyLabelsSync.value,
             pianoTheme: this.elements.pianoThemeSync.value
         };
         localStorage.setItem('scaleFinderState', JSON.stringify(state));
@@ -359,7 +359,8 @@ class App {
             if (state.leftHanded !== undefined) this.elements.leftHandedSync.checked = state.leftHanded;
             if (state.woodType) this.elements.woodTypeSync.value = state.woodType;
             if (state.stringCount) this.elements.stringCountSync.value = state.stringCount;
-            if (state.pianoLabels) this.elements.pianoLabelsSync.value = state.pianoLabels;
+            if (state.keyLabels) this.elements.keyLabelsSync.value = state.keyLabels;
+            else if (state.pianoLabels) this.elements.keyLabelsSync.value = state.pianoLabels;
             if (state.pianoTheme) this.elements.pianoThemeSync.value = state.pianoTheme;
             
             // Reapply Light Mode DOM immediately

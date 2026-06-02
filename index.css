@@ -508,7 +508,7 @@ input:checked + .slider:before {
 .piano-keyboard {
     display: flex;
     justify-content: flex-start;
-    height: 150px;
+    height: 250px;
     background: #111;
     border-radius: 4px;
     padding: 4px;
