@@ -55,15 +55,36 @@ class MusicTheory {
 
     static get chords() {
         return {
-            'Major Chord': [0, 4, 7],
-            'Minor Chord': [0, 3, 7],
+            'Major': [0, 4, 7],
+            'Minor': [0, 3, 7],
+            'Diminished': [0, 3, 6],
+            'Augmented': [0, 4, 8],
+            'sus2': [0, 2, 7],
+            'sus4': [0, 5, 7],
             'Maj7': [0, 4, 7, 11],
             'Min7': [0, 3, 7, 10],
-            'Dom7': [0, 4, 7, 10]
+            'Dom7': [0, 4, 7, 10],
+            'm7b5': [0, 3, 6, 10],
+            'dim7': [0, 3, 6, 9],
+            'mMaj7': [0, 3, 7, 11],
+            'Maj7#5': [0, 4, 8, 11],
+            '9': [0, 4, 7, 10, 14],
+            'Maj9': [0, 4, 7, 11, 14],
+            'Min9': [0, 3, 7, 10, 14],
+            '11': [0, 4, 7, 10, 14, 17],
+            'Min11': [0, 3, 7, 10, 14, 17],
+            '13': [0, 4, 7, 10, 14, 21],
+            'Maj13': [0, 4, 7, 11, 14, 21],
+            'Min13': [0, 3, 7, 10, 14, 21],
+            'add9': [0, 4, 7, 14],
+            'madd9': [0, 3, 7, 14],
+            '6': [0, 4, 7, 9],
+            'm6': [0, 3, 7, 9],
+            '6/9': [0, 4, 7, 9, 14]
         };
     }
 
-    static getNotesInSequence(rootNote, type, isChord = false) {
+    static getNotesInSequence(rootNote, type, isChord = false, inversion = 0) {
         if (!rootNote || !type) return [];
         
         const rootIndex = this.notes.indexOf(rootNote);
@@ -72,7 +93,12 @@ class MusicTheory {
         const intervals = isChord ? this.chords[type] : this.scales[type];
         if (!intervals) return [];
 
-        return intervals.map(interval => this.notes[(rootIndex + interval) % 12]);
+        const notes = intervals.map(interval => this.notes[(rootIndex + interval) % 12]);
+        
+        if (isChord && inversion > 0 && inversion < notes.length) {
+            return notes.slice(inversion).concat(notes.slice(0, inversion));
+        }
+        return notes;
     }
 
     static getFrequency(note, octave) {

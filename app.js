@@ -89,18 +89,31 @@ class App {
         this.fretboard = new Fretboard(null, 26);
         this.view = new FretboardView('fretboard');
         this.pianoView = new PianoView('piano-container');
+        this.sheetMusicView = new SheetMusicView('sheet-music-container');
+        this.circleFifthsView = new CircleOfFifthsView('circle-fifths-container');
+        this.modalCircleFifthsView = new CircleOfFifthsView('modal-circle-container');
+        this.harmonicFieldView = new HarmonicFieldView('harmonic-field-container');
         this.synth = new Synth();
         
         this.elements = {
             toggleGuitarSync: document.getElementById('toggle-guitar'),
             togglePianoSync: document.getElementById('toggle-piano'),
+            toggleSheetMusicLocalSync: document.getElementById('toggle-sheet-music-local'),
+            toggleCircleFifthsLocalSync: document.getElementById('toggle-circle-fifths-local'),
             fretContext: document.getElementById('fret-context-wrapper'),
             pianoContext: document.getElementById('piano-context-wrapper'),
+            sheetMusicContext: document.getElementById('sheet-music-context-wrapper'),
+            sheetMusicWrapper: document.getElementById('sheet-music-wrapper'),
+            circleFifthsContext: document.getElementById('circle-fifths-context-wrapper'),
+            circleFifthsWrapper: document.getElementById('circle-fifths-wrapper'),
             fretboardWrapper: document.getElementById('fretboard-wrapper'),
             pianoWrapper: document.getElementById('piano-wrapper'),
             pianoSettings: document.getElementById('piano-settings'),
             rootNoteSync: document.getElementById('root-note'),
-            typeSync: document.getElementById('type-select'),
+            scaleSelectSync: document.getElementById('scale-select'),
+            chordSelectSync: document.getElementById('chord-select'),
+            inversionSelectSync: document.getElementById('inversion-select'),
+            inversionGroupSync: document.getElementById('inversion-group'),
             showRootSync: document.getElementById('show-root'),
             droneBtnSync: document.getElementById('drone-btn'),
             randomBtnSync: document.getElementById('random-btn'),
@@ -111,7 +124,18 @@ class App {
             tuningPresetSync: document.getElementById('tuning-preset'),
             shapeSelectSync: document.getElementById('shape-select'),
             keyLabelsSync: document.getElementById('key-labels'),
-            pianoThemeSync: document.getElementById('piano-theme')
+            pianoThemeSync: document.getElementById('piano-theme'),
+            clefSelectSync: document.getElementById('clef-select'),
+            // Modal elements
+            circleModal: document.getElementById('circle-modal'),
+            modalCloseBtn: document.getElementById('modal-close-btn'),
+            keySelectBtn: document.getElementById('key-select-btn'),
+
+            // Harmonic field elements
+            harmonicChordSize: document.getElementById('harmonic-chord-size'),
+            toggleHarmonicFieldLocal: document.getElementById('toggle-harmonic-field-local'),
+            harmonicFieldWrapper: document.getElementById('harmonic-field-wrapper'),
+            harmonicFieldContextWrapper: document.getElementById('harmonic-field-context-wrapper')
         };
         
         this.defaultTuningsInfo = {
@@ -140,7 +164,7 @@ class App {
     }
 
     init() {
-        if (!this.elements.rootNoteSync || !this.elements.typeSync) return; // Early return
+        if (!this.elements.rootNoteSync || !this.elements.scaleSelectSync) return; // Early return
 
         this.view.setOnNoteClick((noteData) => {
             this.synth.playNote(noteData.frequency);
@@ -150,12 +174,40 @@ class App {
             this.synth.playNote(noteData.frequency);
         });
 
+        this.sheetMusicView.setOnNoteClick((noteName, octave) => {
+            const freq = MusicTheory.getFrequency(noteName, octave);
+            this.synth.playNote(freq);
+        });
+
         // initial render of piano (3 octaves starting at C2)
         this.pianoView.render(2, 3);
 
         // Add interaction listeners for scale/notes
         this.elements.rootNoteSync.addEventListener('change', () => this.updateHighlights());
-        this.elements.typeSync.addEventListener('change', () => this.updateHighlights());
+        
+        this.elements.scaleSelectSync.addEventListener('change', (e) => {
+            if (e.target.value !== 'none') {
+                this.elements.chordSelectSync.value = 'none';
+                this.elements.inversionSelectSync.value = '0';
+                this.elements.inversionGroupSync.style.display = 'none';
+            }
+            this.updateHighlights();
+        });
+
+        this.elements.chordSelectSync.addEventListener('change', (e) => {
+            if (e.target.value !== 'none') {
+                this.elements.scaleSelectSync.value = 'none';
+                this.elements.inversionGroupSync.style.display = 'flex';
+            } else {
+                this.elements.inversionGroupSync.style.display = 'none';
+            }
+            this.updateHighlights();
+        });
+
+        this.elements.inversionSelectSync.addEventListener('change', () => {
+            this.updateHighlights();
+        });
+
         this.elements.showRootSync.addEventListener('change', () => this.updateHighlights());
 
         this.elements.droneBtnSync.addEventListener('click', () => {
@@ -175,16 +227,41 @@ class App {
         });
 
         this.elements.randomBtnSync.addEventListener('click', () => {
-            const rootOptions = this.elements.rootNoteSync.options;
+            const rootOptions = MusicTheory.notes;
             const randomRootIndex = Math.floor(Math.random() * rootOptions.length);
-            this.elements.rootNoteSync.selectedIndex = randomRootIndex;
+            this.elements.rootNoteSync.value = rootOptions[randomRootIndex];
 
-            // Type sync has optgroups, but `.options` flattens them correctly
-            const typeOptions = this.elements.typeSync.options;
-            const randomTypeIndex = Math.floor(Math.random() * typeOptions.length);
-            this.elements.typeSync.selectedIndex = randomTypeIndex;
+            const isScale = Math.random() > 0.5;
+            if (isScale) {
+                const scaleOptions = this.elements.scaleSelectSync.options;
+                const randomIndex = 1 + Math.floor(Math.random() * (scaleOptions.length - 1));
+                this.elements.scaleSelectSync.selectedIndex = randomIndex;
+                
+                this.elements.chordSelectSync.value = 'none';
+                this.elements.inversionSelectSync.value = '0';
+                this.elements.inversionGroupSync.style.display = 'none';
+                
+                // Sync toggles
+                this.elements.toggleScaleSelect.checked = true;
+                this.elements.scaleSelectSync.style.display = 'block';
+                this.elements.toggleChordSelect.checked = false;
+                this.elements.chordSelectSync.style.display = 'none';
+            } else {
+                const chordOptions = this.elements.chordSelectSync.options;
+                const randomIndex = 1 + Math.floor(Math.random() * (chordOptions.length - 1));
+                this.elements.chordSelectSync.selectedIndex = randomIndex;
+                
+                this.elements.scaleSelectSync.value = 'none';
+                this.elements.inversionSelectSync.value = '0';
+                this.elements.inversionGroupSync.style.display = 'flex';
+                
+                // Sync toggles
+                this.elements.toggleScaleSelect.checked = false;
+                this.elements.scaleSelectSync.style.display = 'none';
+                this.elements.toggleChordSelect.checked = true;
+                this.elements.chordSelectSync.style.display = 'block';
+            }
 
-            // Trigger the UI update
             this.updateHighlights();
         });
 
@@ -255,6 +332,91 @@ class App {
             this.saveState();
         });
 
+        this.elements.toggleSheetMusicLocalSync.addEventListener('change', (e) => {
+            this.elements.sheetMusicWrapper.style.display = e.target.checked ? 'block' : 'none';
+            this.updateHighlights();
+            this.saveState();
+        });
+
+        const handleCircleFifthsClick = (key, scaleType) => {
+            this.elements.rootNoteSync.value = key;
+            this.elements.scaleSelectSync.value = scaleType;
+            this.elements.chordSelectSync.value = 'none';
+            this.elements.inversionGroupSync.style.display = 'none';
+
+            this.updateHighlights();
+        };
+
+        this.circleFifthsView.setOnKeyClick(handleCircleFifthsClick);
+        this.modalCircleFifthsView.setOnKeyClick((key, scaleType) => {
+            handleCircleFifthsClick(key, scaleType);
+            this.elements.circleModal.classList.remove('active'); // Close modal
+        });
+
+        // Key Selector Modal Events
+        this.elements.keySelectBtn.addEventListener('click', () => {
+            const scaleVal = this.elements.scaleSelectSync.value;
+            const isMinor = scaleVal.includes('Minor') || scaleVal.includes('Locrian') || scaleVal.includes('Dorian') || scaleVal.includes('Phrygian');
+            const scaleType = isMinor ? 'Minor (Aeolian)' : 'Major (Ionian)';
+            this.modalCircleFifthsView.render(this.elements.rootNoteSync.value, scaleType);
+            this.elements.circleModal.classList.add('active');
+        });
+
+        this.elements.modalCloseBtn.addEventListener('click', () => {
+            this.elements.circleModal.classList.remove('active');
+        });
+
+        this.elements.circleModal.addEventListener('click', (e) => {
+            if (e.target === this.elements.circleModal) {
+                this.elements.circleModal.classList.remove('active');
+            }
+        });
+
+        // Harmonic Field handlers
+        this.elements.harmonicChordSize.addEventListener('change', () => {
+            this.updateHighlights();
+        });
+
+        const syncHarmonicFieldToggles = (checked) => {
+            this.elements.toggleHarmonicFieldLocal.checked = checked;
+            this.elements.harmonicFieldWrapper.style.display = checked ? 'block' : 'none';
+            this.updateHighlights();
+            this.saveState();
+        };
+
+        this.elements.toggleHarmonicFieldLocal.addEventListener('change', (e) => {
+            syncHarmonicFieldToggles(e.target.checked);
+        });
+
+        this.harmonicFieldView.setOnPlayChord((notes) => {
+            notes.forEach((note, idx) => {
+                setTimeout(() => {
+                    const freq = MusicTheory.getFrequency(note, 3);
+                    this.synth.playNote(freq);
+                }, idx * 150);
+            });
+        });
+
+        this.harmonicFieldView.setOnSelectChord((rootNote, chordType) => {
+            this.elements.rootNoteSync.value = rootNote;
+            this.elements.chordSelectSync.value = chordType;
+            this.elements.scaleSelectSync.value = 'none';
+            this.elements.inversionGroupSync.style.display = 'flex';
+            this.elements.inversionSelectSync.value = '0';
+
+            this.updateHighlights();
+        });
+
+        this.elements.toggleCircleFifthsLocalSync.addEventListener('change', (e) => {
+            this.elements.circleFifthsWrapper.style.display = e.target.checked ? 'flex' : 'none';
+            this.updateHighlights();
+            this.saveState();
+        });
+
+        this.elements.clefSelectSync.addEventListener('change', () => {
+            this.updateHighlights();
+        });
+
         this.elements.shapeSelectSync.addEventListener('change', () => {
             this.updateHighlights();
         });
@@ -281,9 +443,8 @@ class App {
         this.pianoView.setTheme(this.elements.pianoThemeSync.value);
 
         if (savedState && savedState.tuning) {
-            // Restore exact tuning from previous session
             this.fretboard.setTuning(savedState.tuning);
-            this.elements.stringCountSync.value = savedState.stringCount; // Use saved instrument
+            this.elements.stringCountSync.value = savedState.stringCount;
             this.renderFretboard();
         } else {
             const defaultInst = this.elements.stringCountSync.value;
@@ -293,6 +454,17 @@ class App {
         // Instrument toggles init
         this.elements.fretboardWrapper.style.display = this.elements.toggleGuitarSync.checked ? 'flex' : 'none';
         this.elements.pianoWrapper.style.display = this.elements.togglePianoSync.checked ? 'block' : 'none';
+        this.elements.sheetMusicContext.style.display = 'block';
+        this.elements.sheetMusicWrapper.style.display = this.elements.toggleSheetMusicSync.checked ? 'block' : 'none';
+        this.elements.toggleSheetMusicLocalSync.checked = this.elements.toggleSheetMusicSync.checked;
+
+        this.elements.circleFifthsContext.style.display = 'block';
+        this.elements.circleFifthsWrapper.style.display = this.elements.toggleCircleFifthsSync.checked ? 'flex' : 'none';
+        this.elements.toggleCircleFifthsLocalSync.checked = this.elements.toggleCircleFifthsSync.checked;
+
+        // Harmonic field init
+        this.elements.harmonicFieldContextWrapper.style.display = 'block';
+        this.elements.harmonicFieldWrapper.style.display = this.elements.toggleHarmonicFieldLocal.checked ? 'block' : 'none';
     }
 
     handleStringCountChange(count) {
@@ -458,13 +630,21 @@ class App {
         }
 
         const rootNote = this.elements.rootNoteSync.value;
-        const typeSelection = this.elements.typeSync.value;
         const showRoot = this.elements.showRootSync.checked;
 
-        const selectedOption = this.elements.typeSync.options[this.elements.typeSync.selectedIndex];
-        const isChord = selectedOption.parentElement.label === 'Chords';
+        let typeSelection = 'none';
+        let isChord = false;
+        
+        if (this.elements.scaleSelectSync.value !== 'none') {
+            typeSelection = this.elements.scaleSelectSync.value;
+            isChord = false;
+        } else if (this.elements.chordSelectSync.value !== 'none') {
+            typeSelection = this.elements.chordSelectSync.value;
+            isChord = true;
+        }
 
-        const activeNotes = MusicTheory.getNotesInSequence(rootNote, typeSelection, isChord);
+        const inversion = isChord ? parseInt(this.elements.inversionSelectSync.value, 10) : 0;
+        const activeNotes = MusicTheory.getNotesInSequence(rootNote, typeSelection, isChord, inversion);
         
         if (this.synth.isDronePlaying) {
             const freq = MusicTheory.getFrequency(rootNote, 2);
@@ -473,18 +653,83 @@ class App {
 
         const fretWindows = this.calculateFretWindows(rootNote, this.elements.shapeSelectSync.value, typeSelection);
 
-        this.view.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value, fretWindows);
-        this.pianoView.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value);
+        this.view.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value, fretWindows, isChord, inversion);
+        this.pianoView.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value, isChord, inversion);
+
+        const showMusicSections = typeSelection !== 'none';
+
+        if (showMusicSections && this.elements.toggleSheetMusicLocalSync.checked) {
+            this.elements.sheetMusicContext.style.display = 'block';
+            this.elements.sheetMusicWrapper.style.display = 'block';
+            
+            let clef = this.elements.clefSelectSync.value;
+            if (clef === 'auto') {
+                const pianoActive = this.elements.togglePianoSync.checked;
+                const stringCountStr = this.elements.stringCountSync.value;
+                const isBass = stringCountStr === '4' || stringCountStr === '5';
+                if (pianoActive) {
+                    clef = 'grand';
+                } else if (isBass) {
+                    clef = 'bass';
+                } else {
+                    clef = 'treble';
+                }
+            }
+            const parentMajorRoot = MusicTheory.getParentMajorRoot(rootNote, typeSelection);
+            this.sheetMusicView.render(activeNotes, clef, parentMajorRoot, rootNote, isChord, inversion, showRoot);
+        } else {
+            this.elements.sheetMusicContext.style.display = 'none';
+            this.elements.sheetMusicWrapper.style.display = 'none';
+        }
+
+        if (this.elements.toggleCircleFifthsLocalSync.checked) {
+            this.elements.circleFifthsContext.style.display = 'block';
+            this.elements.circleFifthsWrapper.style.display = 'flex';
+            const scaleVal = this.elements.scaleSelectSync.value;
+            const isMinor = scaleVal.includes('Minor') || scaleVal.includes('Locrian') || scaleVal.includes('Dorian') || scaleVal.includes('Phrygian');
+            const scaleType = isMinor ? 'Minor (Aeolian)' : 'Major (Ionian)';
+            this.circleFifthsView.render(rootNote, scaleType);
+        } else {
+            this.elements.circleFifthsContext.style.display = 'none';
+            this.elements.circleFifthsWrapper.style.display = 'none';
+        }
+
+        // Render Harmonic Field (Only active if a scale is selected, not a chord)
+        if (showMusicSections && !isChord && this.elements.toggleHarmonicFieldLocal.checked) {
+            this.elements.harmonicFieldContextWrapper.style.display = 'block';
+            this.elements.harmonicFieldWrapper.style.display = 'block';
+            this.harmonicFieldView.render(rootNote, typeSelection, this.elements.harmonicChordSize.value);
+        } else {
+            this.elements.harmonicFieldContextWrapper.style.display = 'none';
+            this.elements.harmonicFieldWrapper.style.display = 'none';
+        }
+
+        // Update Key select button label
+        let keyText = `Key: ${rootNote}`;
+        if (typeSelection !== 'none') {
+            if (isChord) {
+                keyText = `Key: ${rootNote} ${typeSelection}`;
+            } else {
+                keyText = `Key: ${rootNote} ${typeSelection.split(' ')[0]}`;
+            }
+        }
+        this.elements.keySelectBtn.innerText = '🔑 ' + keyText;
+
         this.saveState();
     }
 
     saveState() {
         const state = {
             rootNote: this.elements.rootNoteSync.value,
-            type: this.elements.typeSync.value,
+            scale: this.elements.scaleSelectSync.value,
+            chord: this.elements.chordSelectSync.value,
+            inversion: this.elements.inversionSelectSync.value,
             shape: this.elements.shapeSelectSync.value,
             showGuitar: this.elements.toggleGuitarSync.checked,
             showPiano: this.elements.togglePianoSync.checked,
+            showSheetMusic: this.elements.toggleSheetMusicLocalSync.checked,
+            showCircleFifths: this.elements.toggleCircleFifthsLocalSync.checked,
+            clef: this.elements.clefSelectSync.value,
             showRoot: this.elements.showRootSync.checked,
             leftHanded: this.elements.leftHandedSync.checked,
             woodType: this.elements.woodTypeSync.value,
@@ -493,7 +738,8 @@ class App {
             tuning: this.fretboard.tuning,
             lightMode: document.documentElement.getAttribute('data-theme') === 'light',
             keyLabels: this.elements.keyLabelsSync.value,
-            pianoTheme: this.elements.pianoThemeSync.value
+            pianoTheme: this.elements.pianoThemeSync.value,
+            showHarmonicField: this.elements.toggleHarmonicFieldLocal.checked
         };
         localStorage.setItem('scaleFinderState', JSON.stringify(state));
     }
@@ -505,7 +751,26 @@ class App {
         try {
             const state = JSON.parse(saved);
             if (state.rootNote) this.elements.rootNoteSync.value = state.rootNote;
-            if (state.type) this.elements.typeSync.value = state.type;
+            if (state.type) {
+                if (MusicTheory.scales[state.type]) {
+                    this.elements.scaleSelectSync.value = state.type;
+                    this.elements.chordSelectSync.value = 'none';
+                    this.elements.inversionGroupSync.style.display = 'none';
+                } else {
+                    this.elements.chordSelectSync.value = state.type;
+                    this.elements.scaleSelectSync.value = 'none';
+                    this.elements.inversionGroupSync.style.display = 'flex';
+                }
+            } else {
+                if (state.scale) this.elements.scaleSelectSync.value = state.scale;
+                if (state.chord) this.elements.chordSelectSync.value = state.chord;
+                if (state.inversion) this.elements.inversionSelectSync.value = state.inversion;
+                if (this.elements.chordSelectSync.value !== 'none') {
+                    this.elements.inversionGroupSync.style.display = 'flex';
+                } else {
+                    this.elements.inversionGroupSync.style.display = 'none';
+                }
+            }
             if (state.shape) this.elements.shapeSelectSync.value = state.shape;
             if (state.showGuitar !== undefined) {
                 this.elements.toggleGuitarSync.checked = state.showGuitar;
@@ -514,6 +779,10 @@ class App {
                 this.elements.togglePianoSync.checked = (state.instrument === 'both' || state.instrument === 'piano');
             }
             if (state.showPiano !== undefined) this.elements.togglePianoSync.checked = state.showPiano;
+            if (state.showSheetMusic !== undefined) this.elements.toggleSheetMusicLocalSync.checked = state.showSheetMusic;
+            if (state.showCircleFifths !== undefined) this.elements.toggleCircleFifthsLocalSync.checked = state.showCircleFifths;
+            if (state.clef) this.elements.clefSelectSync.value = state.clef;
+            if (state.showHarmonicField !== undefined) this.elements.toggleHarmonicFieldLocal.checked = state.showHarmonicField;
             
             if (state.showRoot !== undefined) this.elements.showRootSync.checked = state.showRoot;
             if (state.leftHanded !== undefined) this.elements.leftHandedSync.checked = state.leftHanded;

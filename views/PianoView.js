@@ -84,12 +84,12 @@ class PianoView {
         this.keyElements.push(elem);
     }
 
-    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes') {
+    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes', isChord = false, inversion = 0) {
         if (!this.container || !activeNotes || activeNotes.length === 0) return;
 
         this.keyElements.forEach(key => {
             const note = key.dataset.note;
-            key.classList.remove('visible', 'root');
+            key.classList.remove('visible', 'root', 'bass');
             
             // Labels Logic
             const labelSpan = key.querySelector('.key-label');
@@ -105,6 +105,8 @@ class PianoView {
                 key.classList.add('visible');
                 if (showRootHighlight && note === rootNote) {
                     key.classList.add('root');
+                } else if (isChord && inversion > 0 && note === activeNotes[0]) {
+                    key.classList.add('bass');
                 }
             }
         });

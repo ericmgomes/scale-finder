@@ -105,7 +105,7 @@ class FretboardView {
         this.container.appendChild(numbersDiv);
     }
 
-    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes', fretWindows = null) {
+    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes', fretWindows = null, isChord = false, inversion = 0) {
         if (!this.container || !activeNotes || activeNotes.length === 0) return; // Early return
 
         const dots = this.container.querySelectorAll('.note-dot');
@@ -125,12 +125,14 @@ class FretboardView {
                 span.innerText = note;
             }
 
-            dot.classList.remove('visible', 'root', 'faded');
+            dot.classList.remove('visible', 'root', 'bass', 'faded');
             
             if (activeNotes.includes(note)) {
                 dot.classList.add('visible');
                 if (showRootHighlight && note === rootNote) {
                     dot.classList.add('root');
+                } else if (isChord && inversion > 0 && note === activeNotes[0]) {
+                    dot.classList.add('bass');
                 }
                 
                 // Position filtering logic
