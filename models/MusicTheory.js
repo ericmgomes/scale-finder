@@ -126,4 +126,35 @@ class MusicTheory {
         
         return this.intervalNames[diff];
     }
+
+    static getFifthsOrder(tonic) {
+        const notes = this.notes;
+        const tonicIndex = notes.indexOf(tonic);
+        if (tonicIndex === -1) return [];
+        
+        const fifths = [];
+        for (let k = 0; k < 12; k++) {
+            fifths.push(notes[(tonicIndex + k * 7) % 12]);
+        }
+        return fifths;
+    }
+
+    static getLydianScale(tonic) {
+        const fifths = this.getFifthsOrder(tonic);
+        const scaleNotes = fifths.slice(0, 7);
+        const notes = this.notes;
+        const tonicIndex = notes.indexOf(tonic);
+        return scaleNotes.sort((a, b) => {
+            let diffA = notes.indexOf(a) - tonicIndex;
+            if (diffA < 0) diffA += 12;
+            let diffB = notes.indexOf(b) - tonicIndex;
+            if (diffB < 0) diffB += 12;
+            return diffA - diffB;
+        });
+    }
+
+    static getGravityDistance(note, tonic) {
+        const fifths = this.getFifthsOrder(tonic);
+        return fifths.indexOf(note);
+    }
 }

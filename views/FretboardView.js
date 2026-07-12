@@ -105,8 +105,8 @@ class FretboardView {
         this.container.appendChild(numbersDiv);
     }
 
-    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes', fretWindows = null, isChord = false, inversion = 0) {
-        if (!this.container || !activeNotes || activeNotes.length === 0) return; // Early return
+    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes', fretWindows = null, isChord = false, inversion = 0, theoryMode = 'traditional', lydianTonic = 'C') {
+        if (!this.container) return; // Early return
 
         const dots = this.container.querySelectorAll('.note-dot');
         
@@ -117,53 +117,63 @@ class FretboardView {
             const span = dot.querySelector('span');
             
             // Labels Logic
+            const referenceTonic = theoryMode === 'gravitational' ? lydianTonic : rootNote;
             if (labelMode === 'none') {
                 span.innerText = '';
             } else if (labelMode === 'intervals') {
-                span.innerText = MusicTheory.getIntervalName(rootNote, note);
+                span.innerText = MusicTheory.getIntervalName(referenceTonic, note);
             } else {
                 span.innerText = note;
             }
 
             dot.classList.remove('visible', 'root', 'bass', 'faded');
+            for (let i = 0; i <= 11; i++) {
+                dot.classList.remove(`gravity-dot-${i}`);
+            }
             
-            if (activeNotes.includes(note)) {
+            if (theoryMode === 'gravitational') {
                 dot.classList.add('visible');
-                if (showRootHighlight && note === rootNote) {
-                    dot.classList.add('root');
-                } else if (isChord && inversion > 0 && note === activeNotes[0]) {
-                    dot.classList.add('bass');
-                }
-                
-                // Position filtering logic
-                if (fretWindows !== null) {
-                    if (Array.isArray(fretWindows)) {
-                        // Generic Windows logic
-                        const inWindow = fretWindows.some(w => fret >= w.min && fret <= w.max);
-                        if (!inWindow) {
-                            dot.classList.add('faded');
-                        }
-                    } else if (fretWindows.type === 'per_string') {
-                        // Strict CAGED per-string logic
-                        // Find the corresponding octave window
-                        const baseBounds = fretWindows.strings[stringIdx];
-                        if (baseBounds) {
-                            // baseBounds is [min, max]
-                            // The shape repeats every 12 frets
-                            let inWindow = false;
-                            for (let octave = -1; octave <= 3; octave++) {
-                                const minFret = baseBounds[0] + (octave * 12);
-                                const maxFret = baseBounds[1] + (octave * 12);
-                                if (fret >= minFret && fret <= maxFret) {
-                                    inWindow = true;
-                                    break;
-                                }
-                            }
+                const dist = MusicTheory.getGravityDistance(note, lydianTonic);
+                dot.classList.add(`gravity-dot-${dist}`);
+            } else {
+                if (activeNotes && activeNotes.includes(note)) {
+                    dot.classList.add('visible');
+                    if (showRootHighlight && note === rootNote) {
+                        dot.classList.add('root');
+                    } else if (isChord && inversion > 0 && note === activeNotes[0]) {
+                        dot.classList.add('bass');
+                    }
+                    
+                    // Position filtering logic
+                    if (fretWindows !== null) {
+                        if (Array.isArray(fretWindows)) {
+                            // Generic Windows logic
+                            const inWindow = fretWindows.some(w => fret >= w.min && fret <= w.max);
                             if (!inWindow) {
                                 dot.classList.add('faded');
                             }
-                        } else {
-                            dot.classList.add('faded'); // String not covered
+                        } else if (fretWindows.type === 'per_string') {
+                            // Strict CAGED per-string logic
+                            // Find the corresponding octave window
+                            const baseBounds = fretWindows.strings[stringIdx];
+                            if (baseBounds) {
+                                // baseBounds is [min, max]
+                                // The shape repeats every 12 frets
+                                let inWindow = false;
+                                for (let octave = -1; octave <= 3; octave++) {
+                                    const minFret = baseBounds[0] + (octave * 12);
+                                    const maxFret = baseBounds[1] + (octave * 12);
+                                    if (fret >= minFret && fret <= maxFret) {
+                                        inWindow = true;
+                                        break;
+                                    }
+                                }
+                                if (!inWindow) {
+                                    dot.classList.add('faded');
+                                }
+                            } else {
+                                dot.classList.add('faded'); // String not covered
+                            }
                         }
                     }
                 }

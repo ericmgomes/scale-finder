@@ -975,3 +975,115 @@ input:checked + .slider:before {
     background: rgba(255,255,255,0.1);
 }
 
+/* LCC & Tonal Gravity Styles */
+.gravity-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border);
+    min-width: 70px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.gravity-node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+}
+.gravity-node .node-note {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.15rem;
+    font-family: 'Geist Pixel', monospace;
+}
+.gravity-node .node-dist {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+.gravity-node .node-tension {
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+/* Gravity Proximity Coloring Classes */
+.gravity-dot-0 {
+    background: #10b981 !important;
+    box-shadow: 0 0 14px #10b981 !important;
+    border-color: #10b981 !important;
+    color: white !important;
+}
+.gravity-dot-1, .gravity-dot-2, .gravity-dot-3 {
+    background: #6366f1 !important;
+    box-shadow: 0 0 8px #6366f1 !important;
+    border-color: #6366f1 !important;
+    color: white !important;
+}
+.gravity-dot-4, .gravity-dot-5, .gravity-dot-6 {
+    background: #3b82f6 !important;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5) !important;
+    border-color: #3b82f6 !important;
+    color: white !important;
+}
+.gravity-dot-7, .gravity-dot-8 {
+    background: #f59e0b !important;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.4) !important;
+    border-color: #f59e0b !important;
+    color: white !important;
+}
+.gravity-dot-9, .gravity-dot-10, .gravity-dot-11 {
+    background: #ef4444 !important;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.4) !important;
+    border-color: #ef4444 !important;
+    color: white !important;
+}
+
+/* Piano Key Gravity Classes */
+.piano-key.gravity-key-0 {
+    background: #10b981 !important;
+    border-color: #10b981 !important;
+}
+.piano-key.gravity-key-0 .key-label {
+    color: white !important;
+    opacity: 1 !important;
+}
+.piano-key.gravity-key-1, .piano-key.gravity-key-2, .piano-key.gravity-key-3 {
+    background: #6366f1 !important;
+    border-color: #6366f1 !important;
+}
+.piano-key.gravity-key-1 .key-label, .piano-key.gravity-key-2 .key-label, .piano-key.gravity-key-3 .key-label {
+    color: white !important;
+    opacity: 1 !important;
+}
+.piano-key.gravity-key-4, .piano-key.gravity-key-5, .piano-key.gravity-key-6 {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+.piano-key.gravity-key-4 .key-label, .piano-key.gravity-key-5 .key-label, .piano-key.gravity-key-6 .key-label {
+    color: white !important;
+    opacity: 1 !important;
+}
+.piano-key.gravity-key-7, .piano-key.gravity-key-8 {
+    background: #f59e0b !important;
+    border-color: #f59e0b !important;
+}
+.piano-key.gravity-key-7 .key-label, .piano-key.gravity-key-8 .key-label {
+    color: white !important;
+    opacity: 1 !important;
+}
+.piano-key.gravity-key-9, .piano-key.gravity-key-10, .piano-key.gravity-key-11 {
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+}
+.piano-key.gravity-key-9 .key-label, .piano-key.gravity-key-10 .key-label, .piano-key.gravity-key-11 .key-label {
+    color: white !important;
+    opacity: 1 !important;
+}
+
+

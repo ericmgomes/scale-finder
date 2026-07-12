@@ -135,7 +135,23 @@ class App {
             harmonicChordSize: document.getElementById('harmonic-chord-size'),
             toggleHarmonicFieldLocal: document.getElementById('toggle-harmonic-field-local'),
             harmonicFieldWrapper: document.getElementById('harmonic-field-wrapper'),
-            harmonicFieldContextWrapper: document.getElementById('harmonic-field-context-wrapper')
+            harmonicFieldContextWrapper: document.getElementById('harmonic-field-context-wrapper'),
+
+            // LCC / Gravitational Mode elements
+            theoryModeSwitch: document.getElementById('theory-mode-switch'),
+            traditionalControls: document.getElementById('traditional-controls'),
+            gravitationalControls: document.getElementById('gravitational-controls'),
+            lydianTonic: document.getElementById('lydian-tonic'),
+            lydianTonicBtn: document.getElementById('lydian-tonic-btn'),
+            lydianDroneBtn: document.getElementById('lydian-drone-btn'),
+            lydianParentSelect: document.getElementById('lydian-parent-select'),
+            gravitationalModeContainer: document.getElementById('gravitational-mode-container'),
+            gravityMapContainer: document.getElementById('gravity-map-container'),
+            lydianDegreesDisplay: document.getElementById('lydian-degrees-display'),
+            lydianFifthsDisplay: document.getElementById('lydian-fifths-display'),
+            compTradDisplay: document.getElementById('comp-trad-display'),
+            compGravDisplay: document.getElementById('comp-grav-display'),
+            compTextExplanation: document.getElementById('comp-text-explanation')
         };
         
         this.defaultTuningsInfo = {
@@ -160,6 +176,7 @@ class App {
             'drop_e_8': { strings: '8', tuning: [{note:'E', octave:4}, {note:'B', octave:3}, {note:'G', octave:3}, {note:'D', octave:3}, {note:'A', octave:2}, {note:'E', octave:2}, {note:'B', octave:1}, {note:'E', octave:1}] }
         };
         
+        this.theoryMode = 'traditional';
         this.init();
     }
 
@@ -216,14 +233,32 @@ class App {
             const freq = MusicTheory.getFrequency(rootNote, 2);
             
             this.synth.toggleDrone(freq);
+            this.updateDroneUI();
+        });
+
+        this.elements.lydianDroneBtn.addEventListener('click', () => {
+            const rootNote = this.elements.lydianTonic.value;
+            const freq = MusicTheory.getFrequency(rootNote, 2);
             
-            if (this.synth.isDronePlaying) {
-                this.elements.droneBtnSync.classList.add('active');
-                this.elements.droneBtnSync.innerText = '⏹️';
-            } else {
-                this.elements.droneBtnSync.classList.remove('active');
-                this.elements.droneBtnSync.innerText = '▶️';
-            }
+            this.synth.toggleDrone(freq);
+            this.updateDroneUI();
+        });
+
+        this.elements.lydianTonicBtn.addEventListener('click', () => {
+            this.modalCircleFifthsView.render(this.elements.lydianTonic.value, 'Major (Ionian)');
+            const modalTitle = document.querySelector('.modal-title');
+            if (modalTitle) modalTitle.innerText = "Select Lydian Tonic";
+            this.elements.circleModal.classList.add('active');
+        });
+
+        this.elements.theoryModeSwitch.addEventListener('change', (e) => {
+            this.theoryMode = e.target.value;
+            this.updateTheoryModeUI();
+            this.saveState();
+        });
+
+        this.elements.lydianParentSelect.addEventListener('change', () => {
+            this.updateHighlights();
         });
 
         this.elements.randomBtnSync.addEventListener('click', () => {
@@ -347,9 +382,25 @@ class App {
             this.updateHighlights();
         };
 
-        this.circleFifthsView.setOnKeyClick(handleCircleFifthsClick);
+        const handleLydianTonicClick = (key) => {
+            this.elements.lydianTonic.value = key;
+            this.updateHighlights();
+        };
+
+        this.circleFifthsView.setOnKeyClick((key, scaleType) => {
+            if (this.theoryMode === 'gravitational') {
+                handleLydianTonicClick(key);
+            } else {
+                handleCircleFifthsClick(key, scaleType);
+            }
+        });
+
         this.modalCircleFifthsView.setOnKeyClick((key, scaleType) => {
-            handleCircleFifthsClick(key, scaleType);
+            if (this.theoryMode === 'gravitational') {
+                handleLydianTonicClick(key);
+            } else {
+                handleCircleFifthsClick(key, scaleType);
+            }
             this.elements.circleModal.classList.remove('active'); // Close modal
         });
 
@@ -359,6 +410,8 @@ class App {
             const isMinor = scaleVal.includes('Minor') || scaleVal.includes('Locrian') || scaleVal.includes('Dorian') || scaleVal.includes('Phrygian');
             const scaleType = isMinor ? 'Minor (Aeolian)' : 'Major (Ionian)';
             this.modalCircleFifthsView.render(this.elements.rootNoteSync.value, scaleType);
+            const modalTitle = document.querySelector('.modal-title');
+            if (modalTitle) modalTitle.innerText = "Select Key (Tonalidade)";
             this.elements.circleModal.classList.add('active');
         });
 
@@ -629,93 +682,281 @@ class App {
             }
         }
 
-        const rootNote = this.elements.rootNoteSync.value;
         const showRoot = this.elements.showRootSync.checked;
 
-        let typeSelection = 'none';
-        let isChord = false;
-        
-        if (this.elements.scaleSelectSync.value !== 'none') {
-            typeSelection = this.elements.scaleSelectSync.value;
-            isChord = false;
-        } else if (this.elements.chordSelectSync.value !== 'none') {
-            typeSelection = this.elements.chordSelectSync.value;
-            isChord = true;
-        }
+        if (this.theoryMode === 'gravitational') {
+            const lydianTonic = this.elements.lydianTonic.value;
+            const activeNotes = MusicTheory.getLydianScale(lydianTonic);
 
-        const inversion = isChord ? parseInt(this.elements.inversionSelectSync.value, 10) : 0;
-        const activeNotes = MusicTheory.getNotesInSequence(rootNote, typeSelection, isChord, inversion);
-        
-        if (this.synth.isDronePlaying) {
-            const freq = MusicTheory.getFrequency(rootNote, 2);
-            this.synth.setDroneFrequency(freq);
-        }
-
-        const fretWindows = this.calculateFretWindows(rootNote, this.elements.shapeSelectSync.value, typeSelection);
-
-        this.view.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value, fretWindows, isChord, inversion);
-        this.pianoView.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value, isChord, inversion);
-
-        const showMusicSections = typeSelection !== 'none';
-
-        if (showMusicSections && this.elements.toggleSheetMusicLocalSync.checked) {
-            this.elements.sheetMusicContext.style.display = 'block';
-            this.elements.sheetMusicWrapper.style.display = 'block';
-            
-            let clef = this.elements.clefSelectSync.value;
-            if (clef === 'auto') {
-                const pianoActive = this.elements.togglePianoSync.checked;
-                const stringCountStr = this.elements.stringCountSync.value;
-                const isBass = stringCountStr === '4' || stringCountStr === '5';
-                if (pianoActive) {
-                    clef = 'grand';
-                } else if (isBass) {
-                    clef = 'bass';
-                } else {
-                    clef = 'treble';
-                }
+            if (this.synth.isDronePlaying) {
+                const freq = MusicTheory.getFrequency(lydianTonic, 2);
+                this.synth.setDroneFrequency(freq);
             }
-            const parentMajorRoot = MusicTheory.getParentMajorRoot(rootNote, typeSelection);
-            this.sheetMusicView.render(activeNotes, clef, parentMajorRoot, rootNote, isChord, inversion, showRoot);
-        } else {
-            this.elements.sheetMusicContext.style.display = 'none';
-            this.elements.sheetMusicWrapper.style.display = 'none';
-        }
 
-        if (this.elements.toggleCircleFifthsLocalSync.checked) {
-            this.elements.circleFifthsContext.style.display = 'block';
-            this.elements.circleFifthsWrapper.style.display = 'flex';
-            const scaleVal = this.elements.scaleSelectSync.value;
-            const isMinor = scaleVal.includes('Minor') || scaleVal.includes('Locrian') || scaleVal.includes('Dorian') || scaleVal.includes('Phrygian');
-            const scaleType = isMinor ? 'Minor (Aeolian)' : 'Major (Ionian)';
-            this.circleFifthsView.render(rootNote, scaleType);
-        } else {
+            this.view.highlightNotes(activeNotes, null, showRoot, this.elements.keyLabelsSync.value, null, false, 0, this.theoryMode, lydianTonic);
+            this.pianoView.highlightNotes(activeNotes, null, showRoot, this.elements.keyLabelsSync.value, false, 0, this.theoryMode, lydianTonic);
+
+            if (this.elements.toggleSheetMusicLocalSync.checked) {
+                this.elements.sheetMusicContext.style.display = 'block';
+                this.elements.sheetMusicWrapper.style.display = 'block';
+                
+                let clef = this.elements.clefSelectSync.value;
+                if (clef === 'auto') {
+                    const pianoActive = this.elements.togglePianoSync.checked;
+                    const stringCountStr = this.elements.stringCountSync.value;
+                    const isBass = stringCountStr === '4' || stringCountStr === '5';
+                    if (pianoActive) {
+                        clef = 'grand';
+                    } else if (isBass) {
+                        clef = 'bass';
+                    } else {
+                        clef = 'treble';
+                    }
+                }
+                const parentMajorRoot = MusicTheory.getParentMajorRoot(lydianTonic, 'Lydian');
+                this.sheetMusicView.render(activeNotes, clef, parentMajorRoot, lydianTonic, false, 0, showRoot);
+            } else {
+                this.elements.sheetMusicContext.style.display = 'none';
+                this.elements.sheetMusicWrapper.style.display = 'none';
+            }
+
+            // Hide traditional modes
             this.elements.circleFifthsContext.style.display = 'none';
             this.elements.circleFifthsWrapper.style.display = 'none';
-        }
-
-        // Render Harmonic Field (Only active if a scale is selected, not a chord)
-        if (showMusicSections && !isChord && this.elements.toggleHarmonicFieldLocal.checked) {
-            this.elements.harmonicFieldContextWrapper.style.display = 'block';
-            this.elements.harmonicFieldWrapper.style.display = 'block';
-            this.harmonicFieldView.render(rootNote, typeSelection, this.elements.harmonicChordSize.value);
-        } else {
             this.elements.harmonicFieldContextWrapper.style.display = 'none';
             this.elements.harmonicFieldWrapper.style.display = 'none';
-        }
 
-        // Update Key select button label
-        let keyText = `Key: ${rootNote}`;
-        if (typeSelection !== 'none') {
-            if (isChord) {
-                keyText = `Key: ${rootNote} ${typeSelection}`;
-            } else {
-                keyText = `Key: ${rootNote} ${typeSelection.split(' ')[0]}`;
+            this.elements.lydianTonicBtn.innerText = '🔑 Lydian Tonic: ' + lydianTonic;
+
+            this.renderLCCPanels(lydianTonic);
+        } else {
+            const rootNote = this.elements.rootNoteSync.value;
+
+            let typeSelection = 'none';
+            let isChord = false;
+            
+            if (this.elements.scaleSelectSync.value !== 'none') {
+                typeSelection = this.elements.scaleSelectSync.value;
+                isChord = false;
+            } else if (this.elements.chordSelectSync.value !== 'none') {
+                typeSelection = this.elements.chordSelectSync.value;
+                isChord = true;
             }
+
+            const inversion = isChord ? parseInt(this.elements.inversionSelectSync.value, 10) : 0;
+            const activeNotes = MusicTheory.getNotesInSequence(rootNote, typeSelection, isChord, inversion);
+            
+            if (this.synth.isDronePlaying) {
+                const freq = MusicTheory.getFrequency(rootNote, 2);
+                this.synth.setDroneFrequency(freq);
+            }
+
+            const fretWindows = this.calculateFretWindows(rootNote, this.elements.shapeSelectSync.value, typeSelection);
+
+            this.view.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value, fretWindows, isChord, inversion, this.theoryMode);
+            this.pianoView.highlightNotes(activeNotes, rootNote, showRoot, this.elements.keyLabelsSync.value, isChord, inversion, this.theoryMode);
+
+            const showMusicSections = typeSelection !== 'none';
+
+            if (showMusicSections && this.elements.toggleSheetMusicLocalSync.checked) {
+                this.elements.sheetMusicContext.style.display = 'block';
+                this.elements.sheetMusicWrapper.style.display = 'block';
+                
+                let clef = this.elements.clefSelectSync.value;
+                if (clef === 'auto') {
+                    const pianoActive = this.elements.togglePianoSync.checked;
+                    const stringCountStr = this.elements.stringCountSync.value;
+                    const isBass = stringCountStr === '4' || stringCountStr === '5';
+                    if (pianoActive) {
+                        clef = 'grand';
+                    } else if (isBass) {
+                        clef = 'bass';
+                    } else {
+                        clef = 'treble';
+                    }
+                }
+                const parentMajorRoot = MusicTheory.getParentMajorRoot(rootNote, typeSelection);
+                this.sheetMusicView.render(activeNotes, clef, parentMajorRoot, rootNote, isChord, inversion, showRoot);
+            } else {
+                this.elements.sheetMusicContext.style.display = 'none';
+                this.elements.sheetMusicWrapper.style.display = 'none';
+            }
+
+            if (this.elements.toggleCircleFifthsLocalSync.checked) {
+                this.elements.circleFifthsContext.style.display = 'block';
+                this.elements.circleFifthsWrapper.style.display = 'flex';
+                const scaleVal = this.elements.scaleSelectSync.value;
+                const isMinor = scaleVal.includes('Minor') || scaleVal.includes('Locrian') || scaleVal.includes('Dorian') || scaleVal.includes('Phrygian');
+                const scaleType = isMinor ? 'Minor (Aeolian)' : 'Major (Ionian)';
+                this.circleFifthsView.render(rootNote, scaleType);
+            } else {
+                this.elements.circleFifthsContext.style.display = 'none';
+                this.elements.circleFifthsWrapper.style.display = 'none';
+            }
+
+            // Render Harmonic Field (Only active if a scale is selected, not a chord)
+            if (showMusicSections && !isChord && this.elements.toggleHarmonicFieldLocal.checked) {
+                this.elements.harmonicFieldContextWrapper.style.display = 'block';
+                this.elements.harmonicFieldWrapper.style.display = 'block';
+                this.harmonicFieldView.render(rootNote, typeSelection, this.elements.harmonicChordSize.value);
+            } else {
+                this.elements.harmonicFieldContextWrapper.style.display = 'none';
+                this.elements.harmonicFieldWrapper.style.display = 'none';
+            }
+
+            // Update Key select button label
+            let keyText = `Key: ${rootNote}`;
+            if (typeSelection !== 'none') {
+                if (isChord) {
+                    keyText = `Key: ${rootNote} ${typeSelection}`;
+                } else {
+                    keyText = `Key: ${rootNote} ${typeSelection.split(' ')[0]}`;
+                }
+            }
+            this.elements.keySelectBtn.innerText = '🔑 ' + keyText;
         }
-        this.elements.keySelectBtn.innerText = '🔑 ' + keyText;
 
         this.saveState();
+    }
+
+    updateTheoryModeUI() {
+        if (this.theoryMode === 'gravitational') {
+            this.elements.traditionalControls.style.display = 'none';
+            this.elements.gravitationalControls.style.display = 'flex';
+            this.elements.gravitationalModeContainer.style.display = 'block';
+            
+            // Hide traditional modules that are irrelevant
+            this.elements.circleFifthsContext.style.display = 'none';
+            this.elements.harmonicFieldContextWrapper.style.display = 'none';
+            
+            // Sync radio button visually
+            const rad = document.getElementById('theory-mode-gravitational');
+            if (rad) rad.checked = true;
+        } else {
+            this.elements.traditionalControls.style.display = 'flex';
+            this.elements.gravitationalControls.style.display = 'none';
+            this.elements.gravitationalModeContainer.style.display = 'none';
+            
+            // Restore visibility of traditional modules depending on context
+            const rad = document.getElementById('theory-mode-traditional');
+            if (rad) rad.checked = true;
+        }
+        this.updateHighlights();
+    }
+
+    updateDroneUI() {
+        if (this.synth.isDronePlaying) {
+            this.elements.droneBtnSync.classList.add('active');
+            this.elements.droneBtnSync.innerText = '⏹️';
+            this.elements.lydianDroneBtn.classList.add('active');
+            this.elements.lydianDroneBtn.innerText = '⏹️';
+        } else {
+            this.elements.droneBtnSync.classList.remove('active');
+            this.elements.droneBtnSync.innerText = '▶️';
+            this.elements.lydianDroneBtn.classList.remove('active');
+            this.elements.lydianDroneBtn.innerText = '▶️';
+        }
+    }
+
+    renderLCCPanels(lydianTonic) {
+        const fifths = MusicTheory.getFifthsOrder(lydianTonic);
+        const lydianScale = MusicTheory.getLydianScale(lydianTonic);
+
+        // 1. Render Gravity Map
+        this.elements.gravityMapContainer.innerHTML = '';
+        fifths.forEach((note, index) => {
+            const dist = index;
+            let tensionLabel = "Ingoing";
+            let tensionBg = "#10b981";
+            let textColor = "#fff";
+            
+            if (dist === 0) {
+                tensionLabel = "Tonic";
+                tensionBg = "#10b981";
+            } else if (dist <= 6) {
+                tensionLabel = "Ingoing";
+                tensionBg = "#6366f1";
+            } else if (dist <= 8) {
+                tensionLabel = "Semi-Ingoing";
+                tensionBg = "#f59e0b";
+            } else if (dist <= 10) {
+                tensionLabel = "Semi-Outgoing";
+                tensionBg = "#d97706";
+            } else {
+                tensionLabel = "Outgoing";
+                tensionBg = "#ef4444";
+            }
+
+            const node = document.createElement('div');
+            node.className = 'gravity-node';
+            node.innerHTML = `
+                <div class="node-note">${note}</div>
+                <div class="node-dist">Order: ${dist}</div>
+                <div class="node-tension" style="background: ${tensionBg}; color: ${textColor};">${tensionLabel}</div>
+            `;
+            this.elements.gravityMapContainer.appendChild(node);
+        });
+
+        // 2. Render Lydian Scale Panel Degrees
+        this.elements.lydianDegreesDisplay.innerHTML = '';
+        lydianScale.forEach((note) => {
+            const interval = MusicTheory.getIntervalName(lydianTonic, note);
+            let degreeName = 'I';
+            if (interval === 'R') degreeName = 'I';
+            else if (interval === '2' || interval === 'b2') degreeName = 'II';
+            else if (interval === '3M' || interval === 'm3') degreeName = 'III';
+            else if (interval === 'b5' || interval === 'P4') degreeName = '+IV';
+            else if (interval === 'P5') degreeName = 'V';
+            else if (interval === '6M' || interval === 'm6') degreeName = 'VI';
+            else if (interval === '7M' || interval === 'm7') degreeName = 'VII';
+            
+            const badge = document.createElement('div');
+            badge.style.cssText = "display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--glass-border); min-width: 60px;";
+            badge.innerHTML = `
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">${degreeName}</span>
+                <span style="color: ${degreeName === '+IV' ? 'var(--accent)' : 'var(--text-main)'}; font-size: 1.1rem; margin-top: 0.2rem;">${note}</span>
+            `;
+            this.elements.lydianDegreesDisplay.appendChild(badge);
+        });
+
+        // 3. Render Gravity Stack (Fifths)
+        this.elements.lydianFifthsDisplay.innerHTML = '';
+        const lccFifths = fifths.slice(0, 7);
+        lccFifths.forEach((note, idx) => {
+            const badge = document.createElement('div');
+            badge.style.cssText = "display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--glass-border); min-width: 60px;";
+            badge.innerHTML = `
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">#${idx + 1}</span>
+                <span style="color: var(--text-main); font-size: 1.1rem; margin-top: 0.2rem;">${note}</span>
+            `;
+            this.elements.lydianFifthsDisplay.appendChild(badge);
+        });
+
+        // 4. Render Dynamic Traditional vs Gravitational Comparison
+        const tradNotes = MusicTheory.getNotesInSequence(lydianTonic, 'Major (Ionian)', false);
+        const fourthNoteTrad = tradNotes[3] || 'F';
+        const fourthNoteLcc = lydianScale[3] || 'F#';
+        
+        // Build traditional string
+        const tradHtml = tradNotes.map((n, idx) => {
+            if (idx === 3) return `<span style="color: #ef4444; font-weight: bold;">${n}</span>`;
+            return n;
+        }).join(' - ');
+        this.elements.compTradDisplay.innerHTML = tradHtml;
+        this.elements.compTradDisplay.previousElementSibling.innerText = `${lydianTonic} Major (Traditional):`;
+
+        // Build gravitational string
+        const lccHtml = lydianScale.map((n, idx) => {
+            if (idx === 3) return `<span style="color: var(--accent); font-weight: bold;">${n}</span>`;
+            return n;
+        }).join(' - ');
+        this.elements.compGravDisplay.innerHTML = lccHtml;
+        this.elements.compGravDisplay.previousElementSibling.innerText = `${lydianTonic} Lydian (Gravitational):`;
+
+        // Update explanation text
+        this.elements.compTextExplanation.innerHTML = `
+            In traditional theory, the 4th degree (<strong>${fourthNoteTrad}</strong>) is a crucial scale tone, but it introduces a major-third resolving pull down to the 3rd. Under a gravitational/LCC reading, the <strong>${fourthNoteLcc}</strong> (sharp 4th) preserves the symmetry of perfect fifths, establishing ${lydianTonic} Lydian as the true stable acoustic center.
+        `;
     }
 
     saveState() {
@@ -739,7 +980,9 @@ class App {
             lightMode: document.documentElement.getAttribute('data-theme') === 'light',
             keyLabels: this.elements.keyLabelsSync.value,
             pianoTheme: this.elements.pianoThemeSync.value,
-            showHarmonicField: this.elements.toggleHarmonicFieldLocal.checked
+            showHarmonicField: this.elements.toggleHarmonicFieldLocal.checked,
+            theoryMode: this.theoryMode,
+            lydianTonic: this.elements.lydianTonic.value
         };
         localStorage.setItem('scaleFinderState', JSON.stringify(state));
     }
@@ -750,6 +993,14 @@ class App {
         
         try {
             const state = JSON.parse(saved);
+            
+            if (state.theoryMode) {
+                this.theoryMode = state.theoryMode;
+            }
+            if (state.lydianTonic) {
+                this.elements.lydianTonic.value = state.lydianTonic;
+            }
+
             if (state.rootNote) this.elements.rootNoteSync.value = state.rootNote;
             if (state.type) {
                 if (MusicTheory.scales[state.type]) {
@@ -801,6 +1052,9 @@ class App {
                 this.elements.lightModeSync.innerHTML = moonSVG;
             }
             
+            // Trigger UI and highlights update after all settings are loaded
+            this.updateTheoryModeUI();
+
             return state;
         } catch(e) {
             console.error("Could not load state", e);

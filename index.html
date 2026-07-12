@@ -16,9 +16,18 @@
         </header>
         
         <main>
+            <div class="theory-mode-container" style="display: flex; justify-content: center; margin-bottom: 2rem; padding: 0 1rem; width: 100%;">
+                <div class="segmented-control" id="theory-mode-switch" style="max-width: 450px; width: 100%;">
+                    <input type="radio" id="theory-mode-traditional" name="theory-mode" value="traditional" checked>
+                    <label for="theory-mode-traditional" style="font-family: 'Geist Pixel', monospace;">Traditional Theory</label>
+                    <input type="radio" id="theory-mode-gravitational" name="theory-mode" value="gravitational">
+                    <label for="theory-mode-gravitational" style="font-family: 'Geist Pixel', monospace;">Gravitational / LCC</label>
+                </div>
+            </div>
+
             <div class="controls-wrapper" style="display: flex; gap: 1rem; flex-wrap: nowrap; margin-bottom: 3rem;">
-                <!-- Panel 1: Music Context -->
-                <section class="controls panel glass" style="flex: 0 1 auto; min-width: 0; justify-content: flex-start;">
+                <!-- Panel 1: Music Context (Traditional) -->
+                <section class="controls panel glass" id="traditional-controls" style="flex: 0 1 auto; min-width: 0; justify-content: flex-start;">
                     <div class="control-group">
                         <div style="display: flex; gap: 0.5rem; align-items: stretch; height: 100%;">
                             <input type="hidden" id="root-note" value="A">
@@ -101,6 +110,23 @@
                             <option value="4">4th Inversion (9th)</option>
                             <option value="5">5th Inversion (11th)</option>
                             <option value="6">6th Inversion (13th)</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- Panel 1: Music Context (Gravitational / LCC) -->
+                <section class="controls panel glass" id="gravitational-controls" style="display: none; flex: 0 1 auto; min-width: 0; justify-content: flex-start;">
+                    <div class="control-group">
+                        <div style="display: flex; gap: 0.5rem; align-items: stretch; height: 100%;">
+                            <input type="hidden" id="lydian-tonic" value="A">
+                            <button id="lydian-tonic-btn" class="key-select-btn" title="Click to change Lydian Tonic">🔑 Lydian Tonic: A</button>
+                            <button id="lydian-drone-btn" class="drone-btn" title="Toggle LCC Drone">▶️</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label for="lydian-parent-select" style="font-family: 'Geist Pixel', monospace; font-size: 0.9rem; margin-right: 0.5rem;">Parent / Gravity Field</label>
+                        <select id="lydian-parent-select">
+                            <option value="lydian-scale" selected>Lydian Scale (Fundamental)</option>
                         </select>
                     </div>
                 </section>
@@ -318,6 +344,88 @@
                         <!-- Harmonic field chords will be injected here via JS -->
                     </div>
                 </section>
+            </div>
+
+            <!-- Gravitational Mode / LCC Panels -->
+            <div id="gravitational-mode-container" style="display: none; width: 100%;">
+                <!-- Gravity Map -->
+                <div id="gravity-map-context-wrapper" style="display: block; margin-bottom: 3rem;">
+                    <section class="advanced-settings panel glass" style="margin-bottom: 0.5rem; justify-content: flex-start;">
+                        <div class="control-group">
+                            <span style="font-weight: 500; font-family: 'Geist Pixel', monospace;">🌌 Tonal Gravity Map (Ascending Fifths)</span>
+                        </div>
+                    </section>
+                    <section class="sheet-music-wrapper glass" style="padding: 2rem; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow-x: auto; gap: 1rem;">
+                        <div id="gravity-map-container" style="width: 100%; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 0.75rem;">
+                            <!-- Gravity map nodes will be injected here -->
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 1rem; width: 100%;">
+                            Notes closer to the Lydian Tonic (left) represent primary consonances (Ingoing). Farther notes (right) add tension (Semi-Outgoing/Outgoing).
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Lydian Scale Panel -->
+                <div id="lydian-scale-context-wrapper" style="display: block; margin-bottom: 3rem;">
+                    <section class="advanced-settings panel glass" style="margin-bottom: 0.5rem; justify-content: flex-start;">
+                        <div class="control-group">
+                            <span style="font-weight: 500; font-family: 'Geist Pixel', monospace;">☀️ Lydian Scale Panel</span>
+                        </div>
+                    </section>
+                    <section class="sheet-music-wrapper glass" style="padding: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                        <div class="glass" style="padding: 1.5rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border);">
+                            <h3 style="font-family: 'Geist Pixel', monospace; margin-bottom: 0.75rem; color: var(--accent); font-size: 1.1rem;">Scale Degrees</h3>
+                            <div id="lydian-degrees-display" style="display: flex; gap: 0.5rem; font-size: 1.1rem; font-weight: bold; flex-wrap: wrap;">
+                                <!-- Injected degrees -->
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem;">
+                                Notice the <strong style="color: var(--accent);">#4 / #11</strong> interval, which eliminates the unstable half-step pull of the standard major scale.
+                            </div>
+                        </div>
+                        <div class="glass" style="padding: 1.5rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border);">
+                            <h3 style="font-family: 'Geist Pixel', monospace; margin-bottom: 0.75rem; color: var(--primary); font-size: 1.1rem;">Gravity Stack (Fifths)</h3>
+                            <div id="lydian-fifths-display" style="display: flex; gap: 0.5rem; font-size: 1.1rem; font-weight: bold; flex-wrap: wrap;">
+                                <!-- Injected fifths -->
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem;">
+                                These 7 notes build a continuous stack of perfect fifths starting from the Lydian Tonic.
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Traditional vs Gravitational Comparison & Explanation -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+                    <section class="glass" style="padding: 1.5rem; border-radius: 8px; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--glass-border);">
+                        <h2 style="font-family: 'Geist Pixel', monospace; font-size: 1.3rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: var(--text-main);">Traditional vs LCC Comparison</h2>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div>
+                                <strong style="color: var(--primary); font-size: 0.9rem;">C Major (Traditional):</strong>
+                                <div id="comp-trad-display" style="font-family: 'Geist Pixel', monospace; font-size: 1.1rem; background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.25rem;">C - D - E - <span style="color: #ef4444; font-weight: bold;">F</span> - G - A - B</div>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent); font-size: 0.9rem;">C Lydian (Gravitational):</strong>
+                                <div id="comp-grav-display" style="font-family: 'Geist Pixel', monospace; font-size: 1.1rem; background: rgba(0,0,0,0.2); padding: 0.4rem; border-radius: 4px; margin-top: 0.25rem;">C - D - E - <span style="color: var(--accent); font-weight: bold;">F#</span> - G - A - B</div>
+                            </div>
+                            <p id="comp-text-explanation" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-top: 0.5rem;">
+                                In traditional theory, the 4th degree (F natural) is a crucial scale tone, but it introduces a major-third resolving pull down to E. Under a gravitational/LCC reading, the F# (sharp 11th) preserves the symmetry of perfect fifths, establishing C Lydian as the true stable acoustic center of C.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section class="glass" style="padding: 1.5rem; border-radius: 8px; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--glass-border);">
+                        <h2 style="font-family: 'Geist Pixel', monospace; font-size: 1.3rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; color: var(--text-main);">Explanation & Concept</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
+                            <strong>Lydian Tonic:</strong> The absolute center of gravity. Everything is calculated relative to this parent tonic.
+                        </p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
+                            <strong>Tonal Gravity:</strong> Stable notes are close in the fifths chain (e.g. G, D). Notes farther away (e.g. F, Db) exert higher tension.
+                        </p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; border-top: 1px solid var(--glass-border); padding-top: 0.5rem;">
+                            <em>* Disclaimer: This visualizer is a didactical implementation inspired by George Russell's concepts of tonal gravity. It serves as a tool for visual analysis.</em>
+                        </p>
+                    </section>
+                </div>
             </div>
         </main>
     </div>

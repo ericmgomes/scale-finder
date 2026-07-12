@@ -84,29 +84,40 @@ class PianoView {
         this.keyElements.push(elem);
     }
 
-    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes', isChord = false, inversion = 0) {
-        if (!this.container || !activeNotes || activeNotes.length === 0) return;
+    highlightNotes(activeNotes, rootNote, showRootHighlight, labelMode = 'notes', isChord = false, inversion = 0, theoryMode = 'traditional', lydianTonic = 'C') {
+        if (!this.container) return;
 
         this.keyElements.forEach(key => {
             const note = key.dataset.note;
+            
             key.classList.remove('visible', 'root', 'bass');
+            for (let i = 0; i <= 11; i++) {
+                key.classList.remove(`gravity-key-${i}`);
+            }
             
             // Labels Logic
+            const referenceTonic = theoryMode === 'gravitational' ? lydianTonic : rootNote;
             const labelSpan = key.querySelector('.key-label');
             if (labelMode === 'none') {
                 labelSpan.innerText = '';
             } else if (labelMode === 'intervals') {
-                labelSpan.innerText = MusicTheory.getIntervalName(rootNote, note);
+                labelSpan.innerText = MusicTheory.getIntervalName(referenceTonic, note);
             } else {
                 labelSpan.innerText = note; // Default or off-scale
             }
 
-            if (activeNotes.includes(note)) {
+            if (theoryMode === 'gravitational') {
                 key.classList.add('visible');
-                if (showRootHighlight && note === rootNote) {
-                    key.classList.add('root');
-                } else if (isChord && inversion > 0 && note === activeNotes[0]) {
-                    key.classList.add('bass');
+                const dist = MusicTheory.getGravityDistance(note, lydianTonic);
+                key.classList.add(`gravity-key-${dist}`);
+            } else {
+                if (activeNotes && activeNotes.includes(note)) {
+                    key.classList.add('visible');
+                    if (showRootHighlight && note === rootNote) {
+                        key.classList.add('root');
+                    } else if (isChord && inversion > 0 && note === activeNotes[0]) {
+                        key.classList.add('bass');
+                    }
                 }
             }
         });
